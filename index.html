@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Cali Cards"/>
+<title>Cali Card Game</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f7;color:#1c1c1e;padding:16px 16px 60px;max-width:520px;margin:0 auto;}
+.title{font-size:24px;font-weight:700;margin:0 0 4px;}
+.subtitle{font-size:14px;color:#8e8e93;margin:0 0 18px;}
+.label{font-size:12px;color:#8e8e93;text-transform:uppercase;letter-spacing:.4px;margin:14px 0 8px;display:flex;justify-content:space-between;align-items:center;}
+.lock-hint{font-size:11px;color:#8e8e93;text-transform:none;letter-spacing:0;font-weight:400;}
+input[type=text]{padding:12px 14px;border-radius:12px;border:1px solid #e5e5ea;font-size:16px;background:#fff;outline:none;width:100%;-webkit-appearance:none;}
+input[type=text]:focus{border-color:#007aff;}
+input[type=text]:disabled{background:#f0f0f0;color:#aaa;}
+button{padding:12px 18px;border-radius:12px;border:none;font-size:15px;font-weight:500;cursor:pointer;background:#007aff;color:#fff;-webkit-tap-highlight-color:transparent;}
+button:active{opacity:.8;}
+button:disabled{background:#c7c7cc;cursor:not-allowed;}
+.input-row{display:flex;gap:8px;margin-bottom:12px;}
+.input-row input{flex:1;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;min-height:32px;}
+.chip{display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #e5e5ea;border-radius:20px;padding:4px 10px;font-size:13px;cursor:grab;user-select:none;}
+.chip.dragging{opacity:.4;}
+.chip.assigned{border-color:transparent;}
+.chip-emoji{font-size:14px;}
+.chip-badge{font-size:10px;border-radius:8px;padding:1px 6px;font-weight:600;}
+.chip button{background:none;color:inherit;opacity:.6;font-size:16px;padding:0;line-height:1;cursor:pointer;}
+.empty{font-size:13px;color:#8e8e93;font-style:italic;}
+.bg-beg{background:#EAF3DE;color:#27500A;}
+.bg-int{background:#FAEEDA;color:#633806;}
+.bg-adv{background:#FCEBEB;color:#791F1F;}
+.mode-toggle,.sub-toggle{display:flex;background:#fff;border:1px solid #e5e5ea;border-radius:14px;padding:4px;margin-bottom:14px;}
+.mode-opt{flex:1;text-align:center;padding:10px;font-size:14px;font-weight:500;border-radius:10px;cursor:pointer;color:#8e8e93;}
+.mode-opt.on{background:#007aff;color:#fff;}
+.top-actions-setup{display:flex;justify-content:flex-end;margin-bottom:12px;}
+.pr-link{font-size:13px;padding:6px 12px;background:#fff;color:#007aff;border:1px solid #e5e5ea;border-radius:20px;cursor:pointer;}
+.chaos-card{background:linear-gradient(135deg,#3a0a4a,#7c1d6f);border-radius:14px;padding:14px;margin-bottom:14px;color:#fff;display:block;}
+.chaos-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.chaos-title{font-size:15px;font-weight:700;}
+.chaos-desc{font-size:12px;color:rgba(255,255,255,.65);margin-bottom:10px;line-height:1.4;}
+.chaos-switch{position:relative;width:48px;height:28px;background:rgba(255,255,255,.2);border-radius:14px;cursor:pointer;flex-shrink:0;}
+.chaos-switch.on{background:#ff3b30;}
+.chaos-switch::after{content:'';position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .2s;}
+.chaos-switch.on::after{left:22px;}
+.chaos-chance{display:none;margin-top:8px;}
+.chaos-chance.show{display:block;}
+.chaos-slider-row{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.25);border-radius:10px;padding:10px;}
+.chaos-slider-row label{font-size:12px;color:rgba(255,255,255,.7);}
+.chaos-slider-row input[type=range]{flex:1;accent-color:#ff3b30;}
+.chaos-pct{font-size:16px;font-weight:700;color:#ff3b30;min-width:42px;text-align:right;}
+.range-card{background:#fff;border:1px solid #e5e5ea;border-radius:14px;padding:14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;}
+.range-card.locked{opacity:.5;}
+.range-card label{font-size:14px;color:#8e8e93;min-width:78px;}
+.range-card input[type=range]{flex:1;accent-color:#007aff;}
+.range-card input[type=range]:disabled{cursor:not-allowed;}
+.range-val{font-size:15px;font-weight:600;color:#007aff;min-width:78px;text-align:right;}
+.wide-btn{width:100%;padding:15px;font-size:16px;border-radius:14px;margin-bottom:10px;}
+.wide-btn.chaos{background:linear-gradient(135deg,#7c1d6f,#ff3b30);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:none;align-items:flex-end;justify-content:center;}
+.modal{background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
+.modal h3{font-size:18px;font-weight:600;margin-bottom:4px;}
+.modal-sub{font-size:14px;color:#8e8e93;margin-bottom:20px;}
+.modal-step{font-size:11px;color:#8e8e93;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;font-weight:600;}
+.skill-btn{width:100%;padding:14px;border-radius:14px;margin-bottom:10px;border:1.5px solid;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px;background:none;}
+.skill-icon{font-size:22px;}
+.skill-info{display:flex;flex-direction:column;gap:2px;}
+.skill-name{font-size:15px;font-weight:600;}
+.skill-desc{font-size:12px;opacity:.75;}
+.s-beg{background:#EAF3DE;border-color:#C0DD97;color:#27500A;}
+.s-int{background:#FAEEDA;border-color:#FAC775;color:#633806;}
+.s-adv{background:#FCEBEB;border-color:#F7C1C1;color:#791F1F;}
+.avatar-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
+.avatar-btn{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:28px;background:#f5f5f7;border:2px solid transparent;border-radius:12px;cursor:pointer;}
+.avatar-btn:active{transform:scale(.95);}
+.avatar-btn.selected{border-color:#007aff;background:#e6f1fb;}
+.team-prev-wrap{margin-bottom:14px;}
+.preview-actions{display:flex;justify-content:space-between;align-items:center;margin:14px 0 8px;}
+.preview-actions .label{margin:0;}
+.reroll-btn{font-size:12px;padding:6px 12px;background:#fff;color:#007aff;border:1px solid #007aff;border-radius:20px;cursor:pointer;}
+.team-prev{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.tp-card{border-radius:12px;border:1.5px solid;padding:10px;font-size:12px;min-height:80px;}
+.tp-card.drop-target{border-style:dashed;}
+.tp-card.drop-over{transform:scale(1.02);box-shadow:0 4px 12px rgba(0,0,0,.1);}
+.tp-name{font-weight:700;font-size:13px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
+.tp-empty{font-size:11px;color:#8e8e93;font-style:italic;text-align:center;padding:14px 0;}
+.tp-member{padding:3px 6px;display:flex;justify-content:space-between;align-items:center;border-radius:6px;cursor:pointer;margin:2px 0;}
+.tp-member:active{opacity:.6;}
+.tp-emoji{font-size:13px;margin-right:4px;}
+.bracket-area{background:#fff;border:1px solid #e5e5ea;border-radius:14px;padding:14px;margin-bottom:14px;}
+.matchup{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px;background:#f5f5f7;border-radius:10px;margin-bottom:8px;font-size:14px;font-weight:600;}
+.vs{color:#ff3b30;font-weight:700;font-size:13px;}
+.bracket-pick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
+.bracket-team{padding:14px;border-radius:12px;border:2px solid;text-align:center;font-weight:700;cursor:pointer;font-size:14px;}
+.bracket-team.picked{box-shadow:0 0 0 3px #007aff;}
+.bracket-team.locked{opacity:.4;cursor:not-allowed;}
+.bracket-hint{font-size:12px;color:#8e8e93;text-align:center;margin-bottom:12px;}
+#game{display:none;}
+.game-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:6px;}
+.deck-info{font-size:13px;color:#8e8e93;}
+.top-actions{display:flex;gap:6px;}
+.undo-btn,.quit{font-size:13px;padding:5px 12px;background:none;color:#8e8e93;border:1px solid #e5e5ea;border-radius:20px;cursor:pointer;}
+.undo-btn:disabled{opacity:.4;}
+#redoBtn{animation:slideInLeft .25s ease;}
+@keyframes slideInLeft{from{transform:translateX(-30px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.mult-badge{display:inline-block;background:linear-gradient(135deg,#007aff,#34c759);color:#fff;font-size:13px;font-weight:700;padding:4px 10px;border-radius:8px;margin-right:6px;}
+.chaos-badge{display:inline-block;background:linear-gradient(135deg,#7c1d6f,#ff3b30);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;margin-left:8px;letter-spacing:.5px;}
+.scoreboard{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.score-pill{background:#fff;border:1.5px solid #e5e5ea;border-radius:10px;padding:6px 10px;font-size:12px;min-width:80px;}
+.score-pill.cur{box-shadow:0 0 0 2px #007aff;}
+.score-pill.out{opacity:.5;text-decoration:line-through;}
+.sp-name{font-weight:700;font-size:12px;}
+.sp-sub{font-size:11px;color:#8e8e93;margin-top:1px;}
+.turn-card{background:#fff;border:1px solid #e5e5ea;border-radius:14px;padding:14px 16px;margin-bottom:14px;text-align:center;}
+.turn-sub{font-size:11px;color:#8e8e93;text-transform:uppercase;letter-spacing:.4px;}
+.turn-team{font-size:20px;font-weight:700;margin-top:2px;}
+.turn-player{font-size:14px;color:#8e8e93;margin-top:4px;}
+.punishment-banner{background:linear-gradient(135deg,#ff3b30,#c70000);color:#fff;text-align:center;padding:12px;border-radius:12px;font-weight:700;font-size:15px;margin-bottom:12px;display:none;animation:pulseRed 1s ease infinite alternate;}
+@keyframes pulseRed{from{box-shadow:0 0 0 rgba(255,59,48,.4);}to{box-shadow:0 0 16px rgba(255,59,48,.6);}}
+.card-area{display:flex;flex-direction:column;align-items:center;margin-bottom:16px;}
+.card-wrap{perspective:800px;width:190px;height:265px;cursor:pointer;margin-bottom:12px;}
+.card-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .5s;}
+.card-inner.flipped{transform:rotateY(180deg);}
+.cface{position:absolute;inset:0;border-radius:18px;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;}
+.cback{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);border:3px solid rgba(255,255,255,.1);box-shadow:0 8px 24px rgba(0,0,0,.3);}
+.cback.chaos-back{background:linear-gradient(135deg,#3a0a4a,#7c1d6f,#ff3b30);}
+.cback-txt{font-size:52px;opacity:.13;}
+.cback-logo{position:absolute;font-size:19px;font-weight:700;color:rgba(255,255,255,.55);letter-spacing:1px;}
+.cfront{background:#fff;border:2px solid #e5e5ea;box-shadow:0 8px 24px rgba(0,0,0,.12);transform:rotateY(180deg);flex-direction:column;justify-content:space-between;padding:13px;}
+.ccorner{display:flex;flex-direction:column;line-height:1;}
+.ccorner.bot{align-items:flex-end;transform:rotate(180deg);align-self:flex-end;width:100%;}
+.cnum{font-size:26px;font-weight:700;}
+.csuit-sm{font-size:17px;}
+.csuit-big{font-size:60px;line-height:1;}
+.red{color:#e03131;}.black{color:#1c1c1e;}
+.big-reps{font-size:48px;font-weight:800;color:#007aff;text-align:center;line-height:1;margin-bottom:4px;min-height:48px;transition:color .3s;}
+.big-reps.golden{color:#e8a700;}
+.big-reps.chaos-hit{color:#ff3b30;animation:shake .5s ease;}
+@keyframes shake{0%,100%{transform:scale(1);}25%{transform:scale(1.2) rotate(-3deg);}75%{transform:scale(1.2) rotate(3deg);}}
+.reps-label{font-size:13px;color:#8e8e93;text-align:center;margin-bottom:4px;min-height:18px;}
+.chaos-banner{background:linear-gradient(135deg,#7c1d6f,#ff3b30);color:#fff;text-align:center;padding:8px;border-radius:10px;font-weight:700;font-size:14px;margin-bottom:8px;display:none;}
+.tap-hint{font-size:14px;color:#8e8e93;text-align:center;margin-top:4px;min-height:20px;}
+.gamble-box{background:linear-gradient(135deg,#1a1a2e,#0f3460);border-radius:16px;padding:16px;text-align:center;margin-bottom:12px;display:none;}
+.g-title{color:#ffd700;font-size:16px;font-weight:700;margin-bottom:6px;}
+.g-desc{font-size:12px;color:rgba(255,255,255,.7);margin-bottom:12px;}
+.g-options{display:flex;gap:8px;}
+.g-opt{flex:1;background:rgba(255,255,255,.08);border-radius:12px;padding:10px;}
+.g-opt-label{font-size:11px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px;}
+.g-opt-val{font-size:22px;font-weight:800;color:#fff;margin-bottom:8px;}
+.g-opt-val.gold{color:#ffd700;}
+.g-btn{width:100%;padding:10px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;}
+.g-gamble-btn{background:#ffd700;color:#1a1a2e;}
+.g-take-btn{background:rgba(255,255,255,.2);color:#fff;}
+.done-btn{width:100%;padding:15px;font-size:16px;border-radius:14px;display:none;margin-bottom:10px;background:#34c759;color:#fff;}
+.punish-done-btn{background:linear-gradient(135deg,#ff3b30,#c70000);color:#fff;width:100%;padding:15px;font-size:16px;border-radius:14px;display:none;margin-bottom:10px;}
+.elim-wrap{display:none;margin-bottom:10px;}
+.elim-btn{width:100%;padding:15px;font-size:15px;border-radius:14px;background:#ff3b30;color:#fff;font-weight:600;user-select:none;-webkit-user-select:none;position:relative;overflow:hidden;border:none;cursor:pointer;}
+.elim-bar{position:absolute;left:0;top:0;height:100%;background:rgba(0,0,0,.22);width:0%;border-radius:14px;}
+.elim-lbl{position:relative;z-index:1;}
+.eoverlay{position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;}
+.ebigx{font-size:72px;animation:pop .6s ease infinite alternate;}
+.etitle{font-size:28px;font-weight:700;color:#ff3b30;margin:14px 0 6px;}
+.ename{font-size:24px;font-weight:700;color:#fff;margin-bottom:4px;}
+.efinal{font-size:14px;color:#ffd700;font-weight:600;margin-bottom:8px;}
+.emsg{font-size:14px;color:rgba(255,255,255,.5);margin-bottom:24px;}
+.econtinue{padding:14px 36px;border-radius:14px;font-size:16px;font-weight:600;background:#fff;color:#1c1c1e;border:none;}
+@keyframes pop{from{transform:scale(1);}to{transform:scale(1.12);}}
+#winner{display:none;text-align:center;padding:32px 0;}
+.wtrophy{font-size:64px;margin-bottom:12px;}
+.wtitle{font-size:24px;font-weight:700;margin-bottom:4px;}
+.wname{font-size:26px;font-weight:700;color:#ffd700;margin-bottom:6px;}
+.wreps{font-size:14px;color:#8e8e93;margin-bottom:14px;}
+.wstats{background:#fff;border:1px solid #e5e5ea;border-radius:12px;padding:12px;margin-bottom:16px;text-align:left;}
+.wstat-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #f5f5f7;}
+.wstat-row:last-child{border-bottom:none;}
+.wstat-row.win{color:#e8a700;font-weight:600;}
+.normal-ranges.hidden{display:none;}
+#prPage{display:none;}
+.pr-back{font-size:13px;padding:6px 12px;background:none;color:#007aff;border:none;cursor:pointer;margin-bottom:12px;}
+.pr-player-card{background:#fff;border:1px solid #e5e5ea;border-radius:14px;padding:14px;margin-bottom:10px;}
+.pr-player-name{font-size:17px;font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.pr-best{font-size:13px;color:#e8a700;font-weight:600;}
+.pr-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#8e8e93;border-bottom:1px solid #f5f5f7;}
+.pr-row:last-child{border-bottom:none;}
+.pr-reps{color:#1c1c1e;font-weight:600;}
+</style></head><body>
+
+<div id="setup">
+  <p class="title">Cali Card Game</p>
+  <p class="subtitle">Last one standing wins 💪</p>
+  <p class="label" style="margin-top:0;">Game mode</p>
+  <div class="mode-toggle">
+    <div class="mode-opt on" id="mSolo" onclick="setMode('solo')">1 vs 1</div>
+    <div class="mode-opt" id="mTeam" onclick="setMode('team')">Team</div>
+  </div>
+  <div class="chaos-card" id="chaosCard">
+    <div class="chaos-head"><div class="chaos-title">🔥 Chaos Mode</div><div class="chaos-switch" id="chaosSwitch" onclick="toggleChaos()"></div></div>
+    <div class="chaos-desc">Cards 5–King only. No Ace. Each card has a % chance to <strong>double</strong> the reps.</div>
+    <div class="chaos-chance" id="chaosChance">
+      <div class="chaos-slider-row"><label>Double chance</label><input type="range" min="1" max="99" value="25" id="chaosPctInput" oninput="updateChaosPct()"/><span class="chaos-pct" id="chaosPctVal">25%</span></div>
+    </div>
+  </div>
+  <div id="teamFormation" style="display:none;">
+    <p class="label">Team formation</p>
+    <div class="sub-toggle">
+      <div class="mode-opt on" id="fRand" onclick="setFormation('random')">🎲 Randomized</div>
+      <div class="mode-opt" id="fManual" onclick="setFormation('manual')">✋ Pick own</div>
+    </div>
+  </div>
+  <div class="label"><span>Players</span><span class="lock-hint" id="lockHint">0 players</span></div>
+  <div class="input-row"><input id="nameInput" type="text" placeholder="Enter a name..." maxlength="30"/><button id="addBtn" onclick="addOrPromptPlayer()">Add</button></div>
+  <div class="chips" id="chips"><span class="empty">No players yet</span></div>
+  <div class="normal-ranges" id="normalRanges">
+    <p class="label">Rep range</p>
+    <div class="range-card" id="minRC"><label>Lowest</label><input type="range" min="1" max="12" value="1" id="minR" oninput="updateRange()"/><span class="range-val" id="minLbl">Ace (1)</span></div>
+    <div class="range-card" id="maxRC"><label>Highest</label><input type="range" min="2" max="13" value="13" id="maxR" oninput="updateRange()"/><span class="range-val" id="maxLbl">King (13)</span></div>
+  </div>
+  <div id="teamCountWrap" style="display:none;">
+    <p class="label">Number of teams</p>
+    <div class="range-card"><label>Teams</label><input type="range" min="2" max="6" value="2" id="teamCount" oninput="updateTeams()"/><span class="range-val" id="teamCountVal">2 teams</span></div>
+    <div class="team-prev-wrap">
+      <div class="preview-actions">
+        <span class="label" id="previewLabel">Preview</span>
+        <button class="reroll-btn" id="rerollBtn" onclick="rerollTeams()" style="display:none;">🎲 Re-roll</button>
+      </div>
+      <div id="teamPreview"></div>
+    </div>
+  </div>
+  <button class="wide-btn" id="startBtn" onclick="goNext()">Shuffle & Start 🃏</button>
+</div>
+
+<div id="bracketSetup" style="display:none;">
+  <p class="title">Choose Match</p>
+  <p class="subtitle bracket-hint" id="bracketHint">Tap 2 teams to pick the first matchup, or Continue for random.</p>
+  <div class="bracket-pick-grid" id="bracketPickGrid"></div>
+  <div class="bracket-area" id="bracketView"></div>
+  <button class="wide-btn" id="continueBtn" onclick="confirmBracket()">Continue ➜</button>
+  <button class="wide-btn" onclick="backToSetup()" style="background:#fff;color:#8e8e93;border:1px solid #e5e5ea;">← Back</button>
+</div>
+
+<!-- Skill modal -->
+<div class="modal-overlay" id="skillModal">
+  <div class="modal">
+    <h3 id="modalTitle">Pick skill level</h3>
+    <p class="modal-sub" id="modalSub">for player</p>
+    <div id="skillStep">
+      <button class="skill-btn s-beg" onclick="pickSkill('Beginner')"><span class="skill-icon">🌱</span><span class="skill-info"><span class="skill-name">Beginner</span><span class="skill-desc">Push ups 0–10 · Pull ups 0–3</span></span></button>
+      <button class="skill-btn s-int" onclick="pickSkill('Intermediate')"><span class="skill-icon">🔥</span><span class="skill-info"><span class="skill-name">Intermediate</span><span class="skill-desc">Push ups 11–30 · Pull ups 4–12</span></span></button>
+      <button class="skill-btn s-adv" onclick="pickSkill('Advanced')"><span class="skill-icon">⚡</span><span class="skill-info"><span class="skill-name">Advanced</span><span class="skill-desc">Push ups 31+ · Pull ups 13+</span></span></button>
+    </div>
+  </div>
+</div>
+
+<div id="game">
+  <div class="game-bar">
+    <span class="deck-info" id="deckInfo"></span>
+    <div class="top-actions"><button class="undo-btn" id="redoBtn" onclick="redoLast()" style="display:none;">↷ Redo</button><button class="undo-btn" id="undoBtn" onclick="undoLast()" disabled>↶ Undo</button></div>
+  </div>
+  <div class="scoreboard" id="scoreboard"></div>
+  <div class="punishment-banner" id="punishBanner"></div>
+  <div class="turn-card"><div class="turn-sub" id="turnSub">Current player</div><div class="turn-team" id="turnTeam"></div><div class="turn-player" id="turnPlayer"></div></div>
+  <div class="card-area">
+    <div class="card-wrap" id="cardWrap" onclick="flipCard()">
+      <div class="card-inner" id="cardInner">
+        <div class="cface cback" id="cardBack"><div class="cback-txt">🂠</div><div class="cback-logo" id="cardLogo">CALI</div></div>
+        <div class="cface cfront">
+          <div class="ccorner"><div class="cnum" id="cnTL"></div><div class="csuit-sm" id="csTL"></div></div>
+          <div class="csuit-big" id="csBig"></div>
+          <div class="ccorner bot"><div class="cnum" id="cnBR"></div><div class="csuit-sm" id="csBR"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="chaos-banner" id="chaosBanner">⚡ CHAOS HIT! Reps DOUBLED! ⚡</div>
+    <div class="big-reps" id="bigReps"></div>
+    <div class="reps-label" id="repsLabel"></div>
+    <div class="tap-hint" id="tapHint">Tap the card to flip</div>
+  </div>
+  <div class="gamble-box" id="gambleBox">
+    <div class="g-title" id="gTitle">🎰 Ace! Risk it?</div>
+    <div class="g-desc" id="gDesc"><strong>Risk:</strong> Tap the deck to flip a card. Reps = card × 2.<br><strong>Reward:</strong> If you complete it, the other team enters the <strong>RED ZONE</strong> — they must do the same reps.</div>
+    <div class="g-options">
+      <div class="g-opt"><div class="g-opt-label">Safe</div><div class="g-opt-val">1</div><button class="g-btn g-take-btn" id="gTakeBtn" onclick="takeGamble()">🛡 Take 1</button></div>
+      <div class="g-opt"><div class="g-opt-label">Gamble</div><div class="g-opt-val gold">?</div><button class="g-btn g-gamble-btn" id="gGambleBtn" onclick="doGamble()">🎲 Gamble</button></div>
+    </div>
+  </div>
+  <button class="done-btn" id="doneBtn" onclick="completedReps()">✅ Done with reps!</button>
+  <button class="punish-done-btn" id="punishDoneBtn" onclick="completedPunishment()">✅ Punishment done!</button>
+  <div class="elim-wrap" id="elimWrap"><div class="elim-btn" id="elimBtn"><div class="elim-bar" id="elimBar"></div><div class="elim-lbl">😤 Hold to eliminate <span id="elimName"></span></div></div></div>
+</div>
+
+<div id="winner">
+  <div class="wtrophy">🏆</div>
+  <div class="wtitle">Winner!</div>
+  <div class="wname" id="wname"></div>
+  <div class="wreps" id="wreps"></div>
+  <div class="wstats" id="wstats"></div>
+  <button class="wide-btn" onclick="playAgain()">Play Again</button>
+</div>
+
+<div class="eoverlay" id="eoverlay">
+  <div class="ebigx">❌</div>
+  <div class="etitle" id="etitle">ELIMINATED</div>
+  <div class="ename" id="ename"></div>
+  <div class="efinal" id="efinal"></div>
+  <div class="emsg">Couldn't secure the victory.</div>
+  <button class="econtinue" onclick="closeElim()">Continue</button>
+</div>
+
+<!-- PR Page removed -->
+
+<script>
+const NAMES=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const VALS=[1,2,3,4,5,6,7,8,9,10,11,12,13];
+const SUITS=['♠','♥','♦','♣'];
+const RED=['♥','♦'];
+const TEAM_COLORS=[{name:'Blue',bg:'#E6F1FB',border:'#85b8ee',text:'#0C447C',chip:'#cbe1f7'},{name:'Red',bg:'#FCEBEB',border:'#F7C1C1',text:'#791F1F',chip:'#fad4d4'},{name:'Green',bg:'#EAF3DE',border:'#C0DD97',text:'#27500A',chip:'#d8e9c0'},{name:'Amber',bg:'#FAEEDA',border:'#FAC775',text:'#633806',chip:'#f4dfb8'},{name:'Purple',bg:'#EEEDFE',border:'#CECBF6',text:'#26215C',chip:'#dfdbf9'},{name:'Teal',bg:'#E1F5EE',border:'#9FE1CB',text:'#04342C',chip:'#c4e9dc'}];
+const BADGE={Beginner:'bg-beg',Intermediate:'bg-int',Advanced:'bg-adv'};
+const SKILL_EMOJI={Beginner:'🌱',Intermediate:'🔥',Advanced:'⚡'};
+const AVATARS=['🐺','🦁','🐯','🐉','🦅','🐻','🦈','🦍','🐅','🦊','🐗','🦏','🐢','🦌','🦬','🐃','🐲','🦄','🐎','🐂','🦒','🦘'];
+const MAX_SOLO=2;
+const HOLD_DURATION=1000; // 1 second
+
+let mode='solo',chaos=false,chaosPct=25,formation='random';
+let soloPlayers=[],teamPlayers=[];
+let players=[],teams=[],bracket=[],activeMatch=null;
+let teamCount=2,minV=1,maxV=13;
+let deck=[],curCard=null,flipped=false,pendingReps=0;
+let gambling=false,gMult=2,gBase=0,gLog=[];
+let curIdx=0;
+let teamMultipliers={},teamReps={},teamPlayerIdx={};
+let pendingName='',pendingSkill='',pendingAvatar='';
+let holdInt=null,holdP=0;
+let undoStack=[],redoStack=[];
+const MAX_UNDO=2;
+let punishmentMode=false,punishmentReps=0;
+let bracketSelection=[];
+let savedPlayers=[]; // for play again
+let lastMatchTeams=null; // for play again ordering
+
+function getPRs(){return{};}
+function savePR(){}
+
+document.getElementById('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')addOrPromptPlayer();});
+
+function setMode(m){
+  // Save current list to its bucket before switching
+  if(mode==='solo')soloPlayers=players.slice();
+  else teamPlayers=players.slice();
+  mode=m;
+  // Restore the other bucket
+  players=mode==='solo'?soloPlayers.slice():teamPlayers.slice();
+  document.getElementById('mSolo').classList.toggle('on',m==='solo');
+  document.getElementById('mTeam').classList.toggle('on',m==='team');
+  document.getElementById('chaosCard').style.display=m==='solo'?'block':'none';
+  document.getElementById('teamFormation').style.display=m==='team'?'block':'none';
+  document.getElementById('teamCountWrap').style.display=m==='team'?'block':'none';
+  document.getElementById('normalRanges').style.display=m==='solo'&&!chaos?'block':'none';
+  if(m==='solo'&&players.length>MAX_SOLO)players=players.slice(0,MAX_SOLO);
+  renderChips();renderTeamPreview();updateStartBtn();
+}
+
+function toggleChaos(){
+  chaos=!chaos;
+  document.getElementById('chaosSwitch').classList.toggle('on',chaos);
+  document.getElementById('chaosChance').classList.toggle('show',chaos);
+  // Lock rep range when chaos
+  document.getElementById('minR').disabled=chaos;
+  document.getElementById('maxR').disabled=chaos;
+  document.getElementById('minRC').classList.toggle('locked',chaos);
+  document.getElementById('maxRC').classList.toggle('locked',chaos);
+  if(chaos){
+    document.getElementById('minR').value=5;
+    document.getElementById('maxR').value=13;
+    updateRange();
+  }
+  updateStartBtn();
+}
+
+function updateStartBtn(){
+  const b=document.getElementById('startBtn');
+  if(mode==='solo'&&chaos){b.classList.add('chaos');b.textContent='Enter Chaos 🔥';}
+  else if(mode==='team'){b.classList.remove('chaos');b.textContent='Continue ➜';}
+  else{b.classList.remove('chaos');b.textContent='Shuffle & Start 🃏';}
+}
+
+function updateChaosPct(){chaosPct=+document.getElementById('chaosPctInput').value;document.getElementById('chaosPctVal').textContent=chaosPct+'%';}
+
+function setFormation(f){
+  formation=f;
+  document.getElementById('fRand').classList.toggle('on',f==='random');
+  document.getElementById('fManual').classList.toggle('on',f==='manual');
+  // Reset team assignments when switching
+  players.forEach(p=>delete p.team);
+  renderChips();renderTeamPreview();
+}
+
+function cLabel(v){return v===1?'Ace':v===11?'Jack':v===12?'Queen':v===13?'King':''+v;}
+function cLabelFull(v){
+  // For display in rep text: "Jack (11)" for face cards
+  if(v===1)return'Ace (1)';
+  if(v===11)return'Jack (11)';
+  if(v===12)return'Queen (12)';
+  if(v===13)return'King (13)';
+  return''+v;
+}
+
+function updateRange(){
+  minV=+document.getElementById('minR').value;maxV=+document.getElementById('maxR').value;
+  if(minV>=maxV){maxV=minV+1;document.getElementById('maxR').value=maxV;}
+  document.getElementById('minLbl').textContent=cLabel(minV)+' ('+minV+')';
+  document.getElementById('maxLbl').textContent=cLabel(maxV)+' ('+maxV+')';
+}
+
+function capitalize(str){
+  return str.trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
+}
+
+function addOrPromptPlayer(){
+  const inp=document.getElementById('nameInput');
+  let v=capitalize(inp.value);
+  if(!v)return;
+  if(mode==='solo'&&players.length>=MAX_SOLO)return;
+  // Check for duplicate first name (when only first name given)
+  const firstName=v.split(' ')[0];
+  const hasLastName=v.includes(' ');
+  if(!hasLastName){
+    // Check if any existing player has same first name
+    const sameFirst=players.filter(p=>p.name.split(' ')[0]===firstName);
+    if(sameFirst.length>0){
+      const initial=prompt('There\'s already a '+firstName+'. What\'s '+firstName+'\'s last initial?');
+      if(!initial)return;
+      const letter=initial.trim().charAt(0).toUpperCase();
+      if(!letter)return;
+      v=firstName+' '+letter+'.';
+      // Check if this combo already exists too
+      if(players.find(p=>p.name===v)){alert(v+' is already in the list!');return;}
+    }
+  }
+  if(players.find(p=>p.name===v))return;
+  if(mode==='team'){
+    pendingName=v;pendingSkill='';pendingAvatar='';
+    document.getElementById('modalSub').textContent='for '+v;
+    document.getElementById('modalTitle').textContent='Pick skill level';
+    document.getElementById('skillModal').style.display='flex';
+    inp.value='';
+  } else {
+    players.push({name:v,active:true,reps:0});
+    inp.value='';renderChips();
+  }
+}
+
+function pickSkill(level){
+  // Auto-assign random unused avatar
+  const used=players.map(p=>p.avatar).filter(Boolean);
+  const available=AVATARS.filter(a=>!used.includes(a));
+  const avatar=available[Math.floor(Math.random()*available.length)]||AVATARS[Math.floor(Math.random()*AVATARS.length)];
+  players.push({name:pendingName,skill:level,avatar,active:true,reps:0});
+  pendingName='';
+  document.getElementById('skillModal').style.display='none';
+  document.getElementById('nameInput').focus();
+  renderChips();renderTeamPreview();
+}
+
+function removePlayer(i){players.splice(i,1);renderChips();renderTeamPreview();}
+
+function renderChips(){
+  const c=document.getElementById('chips');
+  c.innerHTML=players.map((p,i)=>{
+    const emoji=p.avatar?`<span class="chip-emoji">${p.avatar}</span>`:'';
+    const skillBadge=p.skill?`<span class="chip-badge ${BADGE[p.skill]}">${SKILL_EMOJI[p.skill]}</span>`:'';
+    // Color chip by team if assigned
+    let style='',cls='';
+    if(p.team){
+      const tc=TEAM_COLORS.find(t=>t.name===p.team);
+      if(tc){style=`background:${tc.chip};border-color:${tc.border};color:${tc.text};`;cls=' assigned';}
+    }
+    const draggable=(mode==='team'&&formation==='manual')?'draggable="true"':'';
+    return `<div class="chip${cls}" ${draggable} data-pidx="${i}" style="${style}" ondragstart="onDragStart(event,${i})" ondragend="onDragEnd(event)">${emoji}${p.name}${skillBadge}<button onclick="removePlayer(${i})">×</button></div>`;
+  }).join('')||'<span class="empty">No players yet</span>';
+  document.getElementById('lockHint').textContent=mode==='solo'?players.length+'/2 players':players.length+' player'+(players.length!==1?'s':'');
+  const locked=mode==='solo'&&players.length>=MAX_SOLO;
+  document.getElementById('nameInput').disabled=locked;
+  document.getElementById('addBtn').disabled=locked;
+}
+
+function updateTeams(){teamCount=+document.getElementById('teamCount').value;document.getElementById('teamCountVal').textContent=teamCount+' teams';renderTeamPreview();}
+function shuf(arr){return arr.slice().sort(()=>Math.random()-0.5);}
+
+function buildTeamsRandom(){
+  if(players.length<teamCount*2)return null;
+  const groups={Advanced:shuf(players.filter(p=>p.skill==='Advanced')),Intermediate:shuf(players.filter(p=>p.skill==='Intermediate')),Beginner:shuf(players.filter(p=>p.skill==='Beginner'))};
+  const t=Array.from({length:teamCount},(_,i)=>({name:TEAM_COLORS[i].name,color:TEAM_COLORS[i],members:[]}));
+  const leftover=[];
+  ['Advanced','Intermediate','Beginner'].forEach(g=>{
+    const list=groups[g];
+    const even=Math.floor(list.length/teamCount)*teamCount;
+    list.forEach((p,i)=>{if(i<even)t[i%teamCount].members.push(p);else leftover.push(p);});
+  });
+  shuf(leftover).forEach((p,i)=>t[i%teamCount].members.push(p));
+  return t;
+}
+
+function buildTeamsManual(){
+  const t=Array.from({length:teamCount},(_,i)=>({name:TEAM_COLORS[i].name,color:TEAM_COLORS[i],members:[]}));
+  players.forEach(p=>{
+    if(p.team){
+      const team=t.find(tm=>tm.name===p.team);
+      if(team)team.members.push(p);
+    }
+  });
+  return t;
+}
+
+let randomTeamsCache=null;
+function rerollTeams(){randomTeamsCache=buildTeamsRandom();renderTeamPreview();}
+
+function renderTeamPreview(){
+  if(mode!=='team'){return;}
+  const wrap=document.getElementById('teamPreview');
+  const rerollBtn=document.getElementById('rerollBtn');
+  const label=document.getElementById('previewLabel');
+
+  if(formation==='random'){
+    rerollBtn.style.display='inline-block';
+    label.textContent='Preview (randomized)';
+    if(players.length<teamCount*2){wrap.innerHTML=`<div class="empty" style="margin:12px 0;">Need at least ${teamCount*2} players for ${teamCount} teams</div>`;return;}
+    if(!randomTeamsCache)randomTeamsCache=buildTeamsRandom();
+    if(!randomTeamsCache){wrap.innerHTML='';return;}
+    wrap.innerHTML='<div class="team-prev">'+randomTeamsCache.map(tm=>{
+      const c=tm.color;
+      return `<div class="tp-card" style="background:${c.bg};border-color:${c.border};color:${c.text};"><div class="tp-name"><span>${tm.name}</span><span style="font-weight:400;opacity:.7;font-size:11px;">(${tm.members.length})</span></div>${tm.members.map(m=>`<div class="tp-member"><span><span class="tp-emoji">${m.avatar||''}</span>${m.name}</span><span>${SKILL_EMOJI[m.skill]}</span></div>`).join('')}</div>`;
+    }).join('')+'</div>';
+  } else {
+    rerollBtn.style.display='none';
+    const assigned=players.filter(p=>p.team).length;
+    label.textContent=`Drag to assign (${assigned}/${players.length})`;
+    const teamsList=buildTeamsManual();
+    wrap.innerHTML='<div class="team-prev">'+teamsList.map(tm=>{
+      const c=tm.color;
+      return `<div class="tp-card drop-target" style="background:${c.bg};border-color:${c.border};color:${c.text};" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'${tm.name}')"><div class="tp-name"><span>${tm.name}</span><span style="font-weight:400;opacity:.7;font-size:11px;">(${tm.members.length})</span></div>${tm.members.length===0?'<div class="tp-empty">Drop here</div>':tm.members.map(m=>{
+        const pIdx=players.findIndex(pl=>pl.name===m.name);
+        return `<div class="tp-member" onclick="unassign(${pIdx})"><span><span class="tp-emoji">${m.avatar||''}</span>${m.name}</span><span>${SKILL_EMOJI[m.skill]}</span></div>`;
+      }).join('')}</div>`;
+    }).join('')+'</div>';
+  }
+}
+
+// Drag and drop
+let draggedIdx=null;
+function onDragStart(e,idx){draggedIdx=idx;e.dataTransfer.effectAllowed='move';e.target.classList.add('dragging');}
+function onDragEnd(e){e.target.classList.remove('dragging');draggedIdx=null;}
+function onDragOver(e){e.preventDefault();e.currentTarget.classList.add('drop-over');}
+function onDragLeave(e){e.currentTarget.classList.remove('drop-over');}
+function onDrop(e,teamName){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drop-over');
+  if(draggedIdx===null)return;
+  players[draggedIdx].team=teamName;
+  renderChips();renderTeamPreview();
+}
+function unassign(idx){delete players[idx].team;renderChips();renderTeamPreview();}
+
+function goNext(){
+  if(mode==='solo'){
+    if(players.length!==2){alert('1v1 needs 2 players!');return;}
+    startGame();
+  } else {
+    if(players.length<teamCount*2){alert('Need '+(teamCount*2)+' players for '+teamCount+' teams!');return;}
+    if(formation==='manual'){
+      const unassigned=players.filter(p=>!p.team).length;
+      if(unassigned>0){alert('All players must be assigned to a team! '+unassigned+' left.');return;}
+      // Check no empty teams
+      const tList=buildTeamsManual();
+      if(tList.some(t=>t.members.length===0)){alert('Each team needs at least 1 player!');return;}
+      teams=tList;
+    } else {
+      teams=randomTeamsCache||buildTeamsRandom();
+    }
+    if(teamCount===2){bracket=[teams[0],teams[1]];startGame();}
+    else{bracketSelection=[];bracket=shuf([...teams]);document.getElementById('setup').style.display='none';document.getElementById('bracketSetup').style.display='block';renderBracketSetup();}
+  }
+}
+
+function renderBracketSetup(){
+  // Build team picker grid
+  const grid=document.getElementById('bracketPickGrid');
+  grid.innerHTML=teams.map(t=>{
+    const picked=bracketSelection.includes(t.name);
+    const locked=bracketSelection.length>=2&&!picked;
+    return `<div class="bracket-team ${picked?'picked':''} ${locked?'locked':''}" style="background:${t.color.bg};border-color:${t.color.border};color:${t.color.text};" onclick="pickBracket('${t.name}')">${t.name} (${t.members.length})</div>`;
+  }).join('');
+  // Show queue
+  const view=document.getElementById('bracketView');
+  view.innerHTML='<div class="label" style="margin:0 0 8px;">Match queue</div>'+
+    bracket.map((t,i)=>{
+      if(i===0)return `<div class="matchup"><span>${t.name}</span><span class="vs">VS</span><span>${bracket[1]?bracket[1].name:'?'}</span></div>`;
+      if(i===1)return '';
+      return `<div class="matchup" style="background:#fafafa;color:#8e8e93;"><span>Winner</span><span class="vs">VS</span><span>${t.name}</span></div>`;
+    }).join('');
+  const hint=document.getElementById('bracketHint');
+  if(bracketSelection.length===2){
+    document.getElementById('continueBtn').textContent='Start: '+bracketSelection.join(' vs ')+' 🃏';
+    hint.textContent='First match locked. Continue to start.';
+  } else if(bracketSelection.length===1){
+    document.getElementById('continueBtn').textContent='Pick 1 more team';
+    hint.textContent='Pick one more team for the first match.';
+  } else {
+    document.getElementById('continueBtn').textContent='Continue (random matchup) ➜';
+    hint.textContent='Tap 2 teams to pick the first matchup, or Continue for random.';
+  }
+}
+
+function pickBracket(name){
+  if(bracketSelection.includes(name)){
+    bracketSelection=bracketSelection.filter(n=>n!==name);
+  } else {
+    if(bracketSelection.length>=2)return;
+    bracketSelection.push(name);
+  }
+  // Reorder bracket so picked teams are first 2
+  if(bracketSelection.length===2){
+    const picked=bracketSelection.map(n=>teams.find(t=>t.name===n));
+    const rest=teams.filter(t=>!bracketSelection.includes(t.name));
+    bracket=[...picked,...shuf(rest)];
+  } else {
+    bracket=shuf([...teams]);
+  }
+  renderBracketSetup();
+}
+
+function confirmBracket(){
+  if(bracketSelection.length===1){alert('Pick a second team!');return;}
+  // If 0 picked, bracket is already randomized
+  startGame();
+}
+
+function backToSetup(){document.getElementById('bracketSetup').style.display='none';document.getElementById('setup').style.display='block';}
+
+function startGame(){
+  buildDeck();
+  punishmentMode=false;punishmentReps=0;
+  document.getElementById('punishBanner').style.display='none';
+  if(mode==='team'){
+    teams.forEach(t=>{teamReps[t.name]=0;teamPlayerIdx[t.name]=0;teamMultipliers[t.name]=t.members.length;});
+    activeMatch=[bracket[0],bracket[1]];
+    curIdx=0;
+  } else {
+    players.forEach(p=>{p.active=true;p.reps=0;});
+    curIdx=0;
+    document.getElementById('cardBack').classList.toggle('chaos-back',chaos);
+    document.getElementById('cardLogo').textContent=chaos?'CHAOS':'CALI';
+  }
+  undoStack=[];redoStack=[];
+  document.getElementById('redoBtn').style.display='none';
+  document.getElementById('setup').style.display='none';
+  document.getElementById('bracketSetup').style.display='none';
+  document.getElementById('winner').style.display='none';
+  document.getElementById('game').style.display='block';
+  loadTurn();
+}
+
+function buildDeck(){
+  deck=[];
+  let lo=mode==='solo'?(chaos?5:minV):1;
+  let hi=mode==='solo'?(chaos?13:maxV):13;
+  SUITS.forEach(s=>VALS.filter(v=>v>=lo&&v<=hi).forEach(v=>deck.push({val:v,suit:s,name:NAMES[v-1]})));
+  for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
+}
+
+function activePlayers(){return players.filter(p=>p.active);}
+
+function loadTurn(){
+  if(deck.length===0)buildDeck();
+  flipped=false;curCard=null;pendingReps=0;
+  gambling=false;gMult=2;gBase=0;gLog=[];gambleFlipPending=false;
+  document.getElementById('cardInner').classList.remove('flipped');
+  document.getElementById('bigReps').textContent='';
+  document.getElementById('bigReps').className='big-reps';
+  document.getElementById('repsLabel').textContent='';
+  document.getElementById('chaosBanner').style.display='none';
+  document.getElementById('tapHint').textContent='Tap the card to flip';
+  document.getElementById('cardWrap').style.pointerEvents='auto';
+  document.getElementById('gambleBox').style.display='none';
+  document.getElementById('doneBtn').style.display='none';
+  document.getElementById('punishDoneBtn').style.display='none';
+  document.getElementById('elimWrap').style.display='none';
+  document.getElementById('gGambleBtn').disabled=false;
+  document.getElementById('gTakeBtn').disabled=false;
+  document.getElementById('undoBtn').disabled=undoStack.length===0;
+  document.getElementById('punishBanner').style.display='none';
+  if(mode==='solo'){
+    const ap=activePlayers();
+    if(ap.length===1){showWinner(ap[0]);return;}
+    const cur=ap[curIdx%ap.length];
+    document.getElementById('turnSub').textContent='Current player';
+    document.getElementById('turnTeam').textContent=cur.name;
+    document.getElementById('turnPlayer').textContent='';
+    const chaosBadge=chaos?'<span class="chaos-badge">CHAOS '+chaosPct+'%</span>':'';
+    document.getElementById('deckInfo').innerHTML=deck.length+' cards · '+ap.length+' players'+chaosBadge;
+  } else {
+    const team=activeMatch[curIdx];
+    const player=team.members[teamPlayerIdx[team.name]%team.members.length];
+    document.getElementById('turnSub').textContent='Now playing';
+    document.getElementById('turnTeam').innerHTML=`<span style="color:${team.color.text};background:${team.color.bg};padding:4px 12px;border-radius:8px;">Team ${team.name}</span>`;
+    document.getElementById('turnPlayer').textContent=(player.avatar||'')+' '+player.name+' '+SKILL_EMOJI[player.skill];
+    document.getElementById('deckInfo').innerHTML=`<span class="mult-badge">${team.name} ×${teamMultipliers[team.name]}</span>${deck.length} cards`;
+  }
+  renderScoreboard();
+}
+
+function renderScoreboard(){
+  const sb=document.getElementById('scoreboard');
+  if(mode==='solo'){
+    const curName=activePlayers()[curIdx%activePlayers().length]?.name;
+    sb.innerHTML=players.map(p=>{
+      const cls=!p.active?'out':(p.name===curName?'cur':'');
+      return `<div class="score-pill ${cls}"><div class="sp-name">${p.name}</div><div class="sp-sub">${p.reps} reps</div></div>`;
+    }).join('');
+  } else {
+    const curTeam=activeMatch[curIdx].name;
+    sb.innerHTML=activeMatch.map(t=>{
+      const cls=t.name===curTeam?'cur':'';
+      return `<div class="score-pill ${cls}" style="background:${t.color.bg};border-color:${t.color.border};color:${t.color.text};"><div class="sp-name">${t.name}</div><div class="sp-sub">${teamReps[t.name]} reps · ×${teamMultipliers[t.name]}</div></div>`;
+    }).join('');
+  }
+}
+
+function flipCard(){
+  if(gambleFlipPending){executeGambleFlip();return;}
+  if(flipped)return;
+  flipped=true;
+  const snap={deck:deck.slice(),players:JSON.parse(JSON.stringify(players)),teamReps:{...teamReps},teamPlayerIdx:{...teamPlayerIdx},teamMultipliers:{...teamMultipliers},curIdx,activeMatch:activeMatch?activeMatch.slice():null,bracket:bracket.slice(),punishmentMode,punishmentReps};
+  undoStack.push(snap);
+  if(undoStack.length>MAX_UNDO)undoStack.shift();
+  redoStack=[]; // clear redo on new action
+  document.getElementById('redoBtn').style.display='none';
+  curCard=deck.pop();
+  drawCardFace(curCard);
+  document.getElementById('cardInner').classList.add('flipped');
+  document.getElementById('cardWrap').style.pointerEvents='none';
+  setTimeout(()=>{
+    if(mode==='solo'&&chaos){
+      const hit=Math.random()*100<chaosPct;
+      if(hit){
+        const doubled=curCard.val*2;
+        document.getElementById('chaosBanner').style.display='block';
+        document.getElementById('bigReps').classList.add('chaos-hit');
+        showReps(doubled,cLabelFull(curCard.val)+' × 2 = '+doubled+' reps (CHAOS!)');
+      } else showReps(curCard.val,cLabelFull(curCard.val)+' = '+curCard.val+' reps');
+    } else if(curCard.val===1) startGamble();
+    else {
+      if(mode==='team'){
+        const team=activeMatch[curIdx];
+        const m=teamMultipliers[team.name];
+        showReps(curCard.val*m,cLabelFull(curCard.val)+' × '+m+' = '+(curCard.val*m)+' reps');
+      } else showReps(curCard.val,cLabelFull(curCard.val)+' = '+curCard.val+' reps');
+    }
+  },460);
+}
+
+function drawCardFace(card){
+  const red=RED.includes(card.suit);
+  const cc=red?'red':'black';
+  ['TL','BR'].forEach(s=>{
+    document.getElementById('cn'+s).textContent=card.name;
+    document.getElementById('cn'+s).className='cnum '+cc;
+    document.getElementById('cs'+s).textContent=card.suit;
+    document.getElementById('cs'+s).className='csuit-sm '+cc;
+  });
+  document.getElementById('csBig').textContent=card.suit;
+  document.getElementById('csBig').className='csuit-big '+cc;
+}
+
+function startGamble(){
+  gambling=true;gMult=2;gBase=0;gLog=[];
+  document.getElementById('gambleBox').style.display='block';
+  document.getElementById('bigReps').textContent='1';
+  document.getElementById('bigReps').classList.add('golden');
+  document.getElementById('repsLabel').textContent='Ace = 1 safe rep, or RISK IT!';
+  document.getElementById('gTitle').textContent='🎰 Ace! Risk it?';
+  document.getElementById('gDesc').innerHTML=mode==='team'
+    ?'<strong>Risk:</strong> Tap deck to flip a card. Reps = card × 2 × multiplier.<br><strong>Reward:</strong> If you finish, other team must do the same (RED ZONE).'
+    :'<strong>Risk:</strong> Tap deck to flip a card. Reps = card × 2.<br>Or take 1 safe rep.';
+}
+
+function curTeamMult(){return mode==='team'?teamMultipliers[activeMatch[curIdx].name]:1;}
+
+let gambleFlipPending=false;
+
+function doGamble(){
+  document.getElementById('gGambleBtn').disabled=true;
+  document.getElementById('gTakeBtn').disabled=true;
+  // Flip card back and wait for user to tap deck again
+  document.getElementById('cardInner').classList.remove('flipped');
+  document.getElementById('gambleBox').style.display='none';
+  document.getElementById('bigReps').textContent='';
+  document.getElementById('repsLabel').textContent='';
+  document.getElementById('tapHint').textContent='👆 Tap the deck for your risk card';
+  gambleFlipPending=true;
+  flipped=false;
+  document.getElementById('cardWrap').style.pointerEvents='auto';
+}
+
+function executeGambleFlip(){
+  gambleFlipPending=false;
+  const lo=mode==='solo'?minV:1;
+  const hi=mode==='solo'?maxV:13;
+  const range=[];for(let v=lo;v<=hi;v++)range.push(v);
+  const drawnVal=range[Math.floor(Math.random()*range.length)];
+  const drawnSuit=SUITS[Math.floor(Math.random()*4)];
+  const drawnCard={val:drawnVal,suit:drawnSuit,name:NAMES[drawnVal-1]};
+  drawCardFace(drawnCard);
+  document.getElementById('cardInner').classList.add('flipped');
+  document.getElementById('cardWrap').style.pointerEvents='none';
+  setTimeout(()=>{
+    if(drawnVal===1){
+      gLog.push('Ace');gMult+=1;gBase=1;
+      // Re-open gamble box for chain
+      document.getElementById('gambleBox').style.display='block';
+      document.getElementById('gGambleBtn').disabled=false;
+      document.getElementById('gTakeBtn').disabled=false;
+      document.getElementById('gTitle').textContent='🎰 Another Ace! Chain × '+gMult;
+      document.getElementById('gDesc').innerHTML=(mode==='team'
+        ?'<strong>Risk:</strong> Reps now × '+gMult+' × multiplier!<br><strong>Reward:</strong> Other team forced into RED ZONE.'
+        :'<strong>Risk:</strong> Reps now × '+gMult+'!');
+      document.getElementById('repsLabel').textContent='Another Ace! Bumped to × '+gMult;
+    } else {
+      const tm=curTeamMult();
+      const finalReps=drawnVal*gMult*tm;
+      gLog.push(cLabel(drawnVal)+'× '+gMult+(mode==='team'?'× '+tm:''));
+      document.getElementById('bigReps').classList.remove('golden');
+      if(mode==='team'){
+        showRepsWithPunishment(finalReps,cLabelFull(drawnVal)+' × '+gMult+' × '+tm+' = '+finalReps+' reps');
+      } else {
+        showReps(finalReps,cLabelFull(drawnVal)+' × '+gMult+' = '+finalReps+' reps 🔥');
+      }
+    }
+  },460);
+}
+
+function takeGamble(){document.getElementById('gambleBox').style.display='none';document.getElementById('bigReps').classList.remove('golden');showReps(1,'Took safe Ace: 1 rep');}
+
+function showReps(reps,label){
+  pendingReps=reps;
+  document.getElementById('bigReps').textContent=reps;
+  document.getElementById('repsLabel').textContent=label||(reps+' reps');
+  document.getElementById('tapHint').textContent='';
+  document.getElementById('doneBtn').style.display='block';
+  document.getElementById('elimWrap').style.display='block';
+  const name=mode==='team'?'Team '+activeMatch[curIdx].name:activePlayers()[curIdx%activePlayers().length].name;
+  document.getElementById('elimName').textContent=name;
+  setupHold();
+}
+
+function showRepsWithPunishment(reps,label){
+  pendingReps=reps;punishmentReps=reps;
+  document.getElementById('bigReps').textContent=reps;
+  document.getElementById('repsLabel').textContent=label;
+  document.getElementById('tapHint').textContent='';
+  document.getElementById('doneBtn').style.display='block';
+  document.getElementById('elimWrap').style.display='block';
+  const team=activeMatch[curIdx];
+  const otherTeam=activeMatch[1-curIdx];
+  document.getElementById('elimName').textContent='Team '+team.name;
+  document.getElementById('punishBanner').style.display='block';
+  document.getElementById('punishBanner').textContent='🔴 RED ZONE LOADED — finish to force Team '+otherTeam.name+' into '+reps+' reps!';
+  setupHold();
+}
+
+function completedReps(){
+  if(mode==='solo'){
+    const ap=activePlayers();
+    const cur=ap[curIdx%ap.length];
+    const p=players.find(pl=>pl.name===cur.name);
+    if(p){p.reps+=pendingReps;savePR(p.name,pendingReps);}
+    curIdx=(curIdx+1)%activePlayers().length;
+    loadTurn();
+  } else {
+    const team=activeMatch[curIdx];
+    teamReps[team.name]+=pendingReps;
+    teamPlayerIdx[team.name]++;
+    // Check if there's a pending punishment for the other team
+    if(punishmentReps>0&&!punishmentMode){
+      // Start punishment round for other team
+      punishmentMode=true;
+      curIdx=1-curIdx; // switch to other team
+      const otherTeam=activeMatch[curIdx];
+      teamReps[otherTeam.name]+=punishmentReps;
+      // Show punishment screen
+      document.getElementById('cardInner').classList.remove('flipped');
+      document.getElementById('cardWrap').style.pointerEvents='none';
+      document.getElementById('punishBanner').style.display='block';
+      document.getElementById('punishBanner').textContent='🔴 RED ZONE — Team '+otherTeam.name+' must do '+punishmentReps+' reps!';
+      document.getElementById('bigReps').textContent=punishmentReps;
+      document.getElementById('bigReps').classList.add('chaos-hit');
+      document.getElementById('repsLabel').textContent='Forced reps from the risk!';
+      document.getElementById('tapHint').textContent='';
+      document.getElementById('doneBtn').style.display='none';
+      document.getElementById('punishDoneBtn').style.display='block';
+      document.getElementById('punishDoneBtn').textContent='✅ Team '+otherTeam.name+' done!';
+      document.getElementById('elimWrap').style.display='block';
+      document.getElementById('elimName').textContent='Team '+otherTeam.name;
+      setupHold();
+      // Update header
+      const t=activeMatch[curIdx];
+      document.getElementById('turnTeam').innerHTML=`<span style="color:${t.color.text};background:${t.color.bg};padding:4px 12px;border-radius:8px;">Team ${t.name} — RED ZONE</span>`;
+      document.getElementById('turnPlayer').textContent='';
+      renderScoreboard();
+    } else {
+      // Normal turn end
+      punishmentMode=false;punishmentReps=0;
+      curIdx=1-curIdx;
+      const newTeam=activeMatch[curIdx];
+      if(teamPlayerIdx[newTeam.name]>=1)teamMultipliers[newTeam.name]++;
+      loadTurn();
+    }
+  }
+}
+
+function completedPunishment(){
+  // Other team finished their punishment, now they take their actual turn
+  punishmentMode=false;punishmentReps=0;
+  // The current team is the one that was punished. They now play their normal turn.
+  // Bump multiplier if they've played before
+  const team=activeMatch[curIdx];
+  if(teamPlayerIdx[team.name]>=1)teamMultipliers[team.name]++;
+  loadTurn();
+}
+
+function captureCurrentState(){
+  return {deck:deck.slice(),players:JSON.parse(JSON.stringify(players)),teamReps:{...teamReps},teamPlayerIdx:{...teamPlayerIdx},teamMultipliers:{...teamMultipliers},curIdx,activeMatch:activeMatch?activeMatch.slice():null,bracket:bracket.slice(),punishmentMode,punishmentReps};
+}
+
+function applySnapshot(s){
+  deck=s.deck;players=s.players;teamReps=s.teamReps;
+  teamPlayerIdx=s.teamPlayerIdx;teamMultipliers=s.teamMultipliers;
+  curIdx=s.curIdx;
+  if(s.activeMatch)activeMatch=s.activeMatch;
+  bracket=s.bracket;
+  punishmentMode=s.punishmentMode;
+  punishmentReps=s.punishmentReps;
+}
+
+function undoLast(){
+  if(undoStack.length===0)return;
+  redoStack.push(captureCurrentState());
+  const s=undoStack.pop();
+  applySnapshot(s);
+  const r=document.getElementById('redoBtn');
+  r.style.display='inline-block';
+  // Re-trigger animation
+  r.style.animation='none';void r.offsetWidth;r.style.animation='';
+  loadTurn();
+}
+
+function redoLast(){
+  if(redoStack.length===0)return;
+  undoStack.push(captureCurrentState());
+  const s=redoStack.pop();
+  applySnapshot(s);
+  if(redoStack.length===0)document.getElementById('redoBtn').style.display='none';
+  loadTurn();
+}
+
+function setupHold(){
+  const bar=document.getElementById('elimBar');holdP=0;bar.style.width='0%';
+  const btn=document.getElementById('elimBtn');
+  const steps=HOLD_DURATION/30;
+  const inc=100/steps;
+  function start(){holdP=0;bar.style.width='0%';holdInt=setInterval(()=>{holdP+=inc;bar.style.width=Math.min(holdP,100)+'%';if(holdP>=100){clearInterval(holdInt);triggerElim();}},30);}
+  function cancel(){clearInterval(holdInt);bar.style.width='0%';holdP=0;}
+  btn.onmousedown=start;btn.ontouchstart=e=>{e.preventDefault();start();};
+  btn.onmouseup=cancel;btn.onmouseleave=cancel;btn.ontouchend=cancel;btn.ontouchcancel=cancel;
+}
+
+function triggerElim(){
+  if(mode==='solo'){
+    const cur=activePlayers()[curIdx%activePlayers().length];
+    document.getElementById('etitle').textContent='ELIMINATED';
+    document.getElementById('ename').textContent=cur.name;
+    document.getElementById('efinal').textContent='Total: '+cur.reps+' reps';
+  } else {
+    const team=activeMatch[curIdx];
+    document.getElementById('etitle').textContent='TEAM ELIMINATED';
+    document.getElementById('ename').textContent='Team '+team.name;
+    document.getElementById('efinal').textContent='Team total: '+teamReps[team.name]+' reps';
+  }
+  document.getElementById('eoverlay').style.display='flex';
+}
+
+function closeElim(){
+  document.getElementById('eoverlay').style.display='none';
+  if(mode==='solo'){
+    const ap=activePlayers();
+    const cur=ap[curIdx%ap.length];
+    players.find(p=>p.name===cur.name).active=false;
+    if(activePlayers().length===1){showWinner(activePlayers()[0]);return;}
+    if(curIdx>=activePlayers().length)curIdx=0;
+    loadTurn();
+  } else {
+    const eliminated=activeMatch[curIdx];
+    const winner=activeMatch[1-curIdx];
+    lastMatchTeams=[eliminated,winner]; // remember for play again
+    if(teamCount===2){showWinner(winner);return;}
+    const idx=bracket.indexOf(eliminated);if(idx>=0)bracket.splice(idx,1);
+    const winnerIdx=bracket.indexOf(winner);
+    const remaining=bracket.filter((_,i)=>i!==winnerIdx);
+    if(remaining.length===0){showWinner(winner);return;}
+    activeMatch=[winner,remaining[0]];
+    teams.forEach(t=>{teamMultipliers[t.name]=t.members.length;});
+    teamReps[winner.name]=0;
+    teamReps[activeMatch[1].name]=0;
+    teamPlayerIdx[winner.name]=0;
+    teamPlayerIdx[activeMatch[1].name]=0;
+    curIdx=0;
+    punishmentMode=false;punishmentReps=0;
+    loadTurn();
+  }
+}
+
+function showWinner(w){
+  document.getElementById('game').style.display='none';
+  document.getElementById('winner').style.display='block';
+  if(mode==='solo'){
+    document.getElementById('wname').textContent=w.name+' 👑';
+    document.getElementById('wreps').textContent='Total: '+w.reps+' reps';
+    const sorted=[...players].sort((a,b)=>b.reps-a.reps);
+    document.getElementById('wstats').innerHTML='<div style="font-size:11px;color:#8e8e93;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Final standings</div>'+sorted.map(pl=>`<div class="wstat-row ${pl.name===w.name?'win':''}"><span>${pl.name===w.name?'🏆 ':''}${pl.name}</span><span>${pl.reps} reps</span></div>`).join('');
+  } else {
+    document.getElementById('wname').textContent='Team '+w.name+' 👑';
+    document.getElementById('wreps').textContent=teamReps[w.name]+' total reps · '+w.members.length+' warriors';
+    // Show team totals for ALL teams
+    const sortedTeams=[...teams].sort((a,b)=>teamReps[b.name]-teamReps[a.name]);
+    document.getElementById('wstats').innerHTML='<div style="font-size:11px;color:#8e8e93;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Team totals</div>'+sortedTeams.map(t=>`<div class="wstat-row ${t.name===w.name?'win':''}"><span>${t.name===w.name?'🏆 ':''}Team ${t.name}</span><span>${teamReps[t.name]} reps</span></div>`).join('');
+    savedPlayers=JSON.parse(JSON.stringify(players));
+  }
+}
+
+function playAgain(){
+  document.getElementById('winner').style.display='none';
+  if(mode==='team'&&savedPlayers.length){
+    // Restore players (keep names/skills/avatars)
+    players=savedPlayers.map(p=>({...p,active:true,reps:0,team:p.team}));
+    // For random formation: re-build teams; for manual: keep team assignments
+    if(formation==='random'){
+      players.forEach(p=>delete p.team);
+      randomTeamsCache=null;
+    }
+    // Reorder bracket so last match teams are first 2 (suggestion)
+    if(lastMatchTeams&&teamCount>2){
+      // Just go back to setup, user can re-pick
+    }
+    document.getElementById('setup').style.display='block';
+    renderChips();renderTeamPreview();
+  } else {
+    quitGame();
+  }
+}
+
+function quitGame(){
+  players=[];teams=[];bracket=[];activeMatch=null;
+  soloPlayers=[];teamPlayers=[];
+  teamReps={};teamPlayerIdx={};teamMultipliers={};
+  undoStack=[];redoStack=[];savedPlayers=[];lastMatchTeams=null;randomTeamsCache=null;
+  bracketSelection=[];
+  punishmentMode=false;punishmentReps=0;
+  document.getElementById('game').style.display='none';
+  document.getElementById('winner').style.display='none';
+  document.getElementById('bracketSetup').style.display='none';
+  document.getElementById('setup').style.display='block';
+  renderChips();renderTeamPreview();updateRange();
+}
+
+updateRange();renderChips();updateTeams();updateChaosPct();
+</script>
+</body></html>
